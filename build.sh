@@ -9,5 +9,10 @@ sed -i '/<\/devices>/i \
     <target type="virtio"/>\
   </console>' "$XML_FILE"
 
-ship --vm exec arch-vm-base --command "$SCRIPT_DIR/customize.sh"
+ship --vm shutdown arch-vm-base 
+virsh -c qemu:///system undefine arch-vm-base
+virsh -c qemu:///system define "$XML_FILE"
+
+ship --vm start arch-vm-base
+#ship --vm exec arch-vm-base --command "$SCRIPT_DIR/customize.sh"
 ship --vm view arch-vm-base

@@ -1,3 +1,6 @@
+arch 
+arch 
+
 sudo pacman -Syu xorg-server xorg-xauth
 sudo touch /boot/loader/entries/arch.conf
 
