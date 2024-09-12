@@ -9,10 +9,32 @@ sed -i '/<\/devices>/i \
     <target type="virtio"/>\
   </console>' "$XML_FILE"
 
-ship --vm shutdown arch-vm-base 
 virsh -c qemu:///system undefine arch-vm-base
 virsh -c qemu:///system define "$XML_FILE"
 
 ship --vm start arch-vm-base
-#ship --vm exec arch-vm-base --command "$SCRIPT_DIR/customize.sh"
+
+COMMANDS=$(cat <<'EOF'
+arch
+arch
+EOF
+)
+
+while IFS= read -r command; do
+    if [[ -n "$command" ]]; then
+        tmux send-keys -t arch-vm-base "$command" C-m
+        sleep 1
+    fi
+done <<< "$COMMANDS"
+
+COMMANDS=$(cat <<'EOF'
+echo "hi"
+echo "its working"
+EOF
+)
+
+COMBINED_COMMANDS=$(echo "$COMMANDS" | awk '{print $0 " &&"}' | sed '$s/ &&$//') 
+
+tmux send-keys -t arch-vm-base "$COMBINED_COMMANDS" C-m
+
 ship --vm view arch-vm-base
