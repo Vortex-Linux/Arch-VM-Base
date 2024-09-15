@@ -30,14 +30,34 @@ while IFS= read -r command; do
     fi
 done <<< "$COMMANDS"
 
-COMMANDS=$(cat <<'EOF'
-echo "hi"
-echo "its working"
+COMMANDS=$(cat <<EOF 
+sudo pacman -Syu --noconfirm &&
+sleep 30 &&
+sudo pacman -S xorg-server xorg-xinit --noconfirm &&
+
+echo -e "X11Forwarding yes\nX11DisplayOffset 10" | sudo tee -a /etc/ssh/sshd_config && 
+sudo systemctl reload sshd && 
+
+sudo tee /etc/systemd/system/xorg.service > /dev/null <<SERVICE
+[Unit]
+Description=X.Org Server
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/Xorg :0 -config /etc/X11/xorg.conf
+Restart=always
+User=arch
+Environment=DISPLAY=:0
+
+[Install]
+WantedBy=multi-user.target
+SERVICE
+
+sudo systemctl daemon-reload && 
+sudo systemctl enable --now xorg.service
 EOF
 )
 
-COMBINED_COMMANDS=$(echo "$COMMANDS" | awk '{print $0 " &&"}' | sed '$s/ &&$//') 
-
-tmux send-keys -t arch-vm-base "$COMBINED_COMMANDS" C-m
+tmux send-keys -t arch-vm-base "$COMMANDS" C-m
 
 ./view_vm.sh
