@@ -6,7 +6,7 @@ XML_FILE="/tmp/arch-vm-base.xml"
 
 ship --vm delete arch-vm-base 
 
-echo n | ship --vm create arch-vm-base --source https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-basic.qcow2
+echo n | ship --vm create arch-vm-base --source https://geo.mirror.pkgbuild.com/iso/latest/archlinux-x86_64.iso
 
 sed -i '/<\/devices>/i \
   <console type="pty">\
