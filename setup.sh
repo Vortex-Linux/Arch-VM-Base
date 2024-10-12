@@ -36,10 +36,10 @@ mount /dev/vda1 /mnt/boot &&
 mkdir /mnt/home &&
 mount /dev/vg0/home /mnt/home &&
 
-pacman -Sy pacman-contrib &&
+pacman -Sy pacman-contrib --noconfirm &&
 
 cp /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.backup &&
-rankmirrors -n 6 /etc/pacman.d/mirrorlist.backup > /etc/pacman.d/mirrorlist
+rankmirrors -n 6 /etc/pacman.d/mirrorlist.backup > /etc/pacman.d/mirrorlistm && 
 
 pacstrap -K /mnt base linux linux-firmware base-devel && 
 
