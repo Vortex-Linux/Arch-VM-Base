@@ -4,7 +4,7 @@ SCRIPT_PATH="$(readlink -f "$0")"
 SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
 XML_FILE="/tmp/arch-vm-base.xml"
 
-ship --vm delete arch-vm-base 
+echo y | ship --vm delete arch-vm-base 
 
 echo n | ship --vm create arch-vm-base --source https://geo.mirror.pkgbuild.com/iso/latest/archlinux-x86_64.iso
 
@@ -18,5 +18,5 @@ virsh -c qemu:///system define "$XML_FILE"
 
 ship --vm start arch-vm-base 
 
-#./setup.sh
+./setup.sh
 ./view_vm.sh
