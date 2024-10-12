@@ -30,6 +30,8 @@ mkfs.ext4 /dev/vg0/home &&
 mkswap /dev/vg0/swap &&
 swapon /dev/vg0/swap &&
 
+mount /dev/vg0/root /mnt && 
+
 mkdir /mnt/boot &&
 mount /dev/vda1 /mnt/boot &&
 
