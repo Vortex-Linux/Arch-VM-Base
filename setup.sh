@@ -43,7 +43,45 @@ rankmirrors -n 6 /etc/pacman.d/mirrorlist.backup > /etc/pacman.d/mirrorlist
 
 pacstrap -K /mnt base linux linux-firmware base-devel && 
 
-genfstab -U -p /mnt >> /mnt/etc/fstab 
+genfstab -U -p /mnt >> /mnt/etc/fstab && 
+
+arch-chroot /mnt /bin/bash -c "
+sed -i "/^#.*en_US.UTF-8 UTF-8/s/^#//" /etc/locale.gen && 
+locale-gen &&
+
+echo "LANG=en_US.UTF-8" > /etc/locale.conf && 
+
+timedatectl set-timezone "$zoneinfo" &&
+sudo hwclock --systohc &&
+
+echo "archlinux" > /etc/hostname &&  
+
+sudo systemctl enable fstrim.timer && 
+
+sudo sed -i '/^\[multilib\]$/,/^\s*$/ s/^#*\s*Include\s*=.*/Include = \/etc\/pacman.d\/mirrorlist/; /^\s*Include\s*=/ s/^#*//' /etc/pacman.conf &&
+
+echo "root:$arch" | sudo chpasswd && 
+
+useradd -m -g users -G wheel,storage,power -s /bin/bash arch &&
+echo "arch:arch" | sudo chpasswd && 
+
+sudo sed -i '/^# %wheel/s/^# //' /etc/sudoers &&
+echo "Defaults rootpw" >> /etc/sudoers &&
+
+bootctl install && 
+
+sudo touch /boot/loader/entries/arch.conf &&
+sudo tee /boot/loader/entries/arch.conf << BOOTENTRY
+title   Arch Linux
+linux   /vmlinuz-linux
+initrd  /initramfs-linux.img
+options root=/dev/vg0/root rw
+BOOTENTRY
+&&
+sudo pacman -S networkmanager blueman linux-headers &&
+sudo systemctl enable NetworkManager.service
+"
+umount -R /mnt
 EOF
 )
 
