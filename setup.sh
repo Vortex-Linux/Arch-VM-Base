@@ -2,6 +2,7 @@
 
 COMMANDS=$(cat <<'EOF'
 root
+exec bash
 EOF
 )
 
@@ -50,14 +51,11 @@ pacstrap -K /mnt base linux linux-firmware base-devel &&
 
 genfstab -U -p /mnt >> /mnt/etc/fstab && 
 
-arch-chroot /mnt /bin/bash -c '
+arch-chroot /mnt /bin/bash -c "
 sed -i "/^#.*en_US.UTF-8 UTF-8/s/^#//" /etc/locale.gen && 
 locale-gen &&
 
 echo "LANG=en_US.UTF-8" > /etc/locale.conf && 
-
-timedatectl set-timezone "$zoneinfo" &&
-sudo hwclock --systohc &&
 
 echo "archlinux" > /etc/hostname &&  
 
@@ -66,7 +64,7 @@ sudo systemctl enable fstrim.timer &&
 sed -i "/^\[multilib\]$/,/^\s*$/ s/^#*\s*Include\s*=.*/Include = \/etc\/pacman.d\/mirrorlist/" /etc/pacman.conf &&
 sed -i "/^\s*Include\s*=/ s/^#*/#/" /etc/pacman.conf &&
 
-echo "root:$arch" | sudo chpasswd && 
+echo "root:arch" | sudo chpasswd && 
 
 useradd -m -g users -G wheel,storage,power -s /bin/bash arch &&
 echo "arch:arch" | sudo chpasswd && 
@@ -109,7 +107,7 @@ SERVICE
 &&
 sudo systemctl daemon-reload && 
 sudo systemctl enable --now xorg.service
-' 
+" 
 &&
 umount -R /mnt
 EOF
