@@ -49,7 +49,7 @@ pacstrap -K /mnt base linux linux-firmware base-devel &&
 
 genfstab -U -p /mnt >> /mnt/etc/fstab && 
 
-arch-chroot /mnt /bin/bash -c "
+arch-chroot /mnt /bin/bash -c '
 sed -i "/^#.*en_US.UTF-8 UTF-8/s/^#//" /etc/locale.gen && 
 locale-gen &&
 
@@ -107,7 +107,7 @@ SERVICE
 &&
 sudo systemctl daemon-reload && 
 sudo systemctl enable --now xorg.service
-"
+'
 umount -R /mnt
 EOF
 )
