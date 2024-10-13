@@ -38,6 +38,8 @@ mount /dev/vda1 /mnt/boot &&
 mkdir /mnt/home &&
 mount /dev/vg0/home /mnt/home &&
 
+sleep 5 && 
+
 pacman -Sy pacman-contrib --noconfirm &&
 
 cp /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.backup &&
