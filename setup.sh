@@ -38,7 +38,8 @@ mount /dev/vda1 /mnt/boot &&
 mkdir /mnt/home &&
 mount /dev/vg0/home /mnt/home &&
 
-sleep 10 && 
+echo "Partitioning and filesystem setup complete. Sleeping for 20 seconds to allow changes to settle before continuing." &&
+sleep 20 && 
 
 pacman -Sy pacman-contrib --noconfirm &&
 
@@ -107,7 +108,8 @@ SERVICE
 &&
 sudo systemctl daemon-reload && 
 sudo systemctl enable --now xorg.service
-'
+' 
+&&
 umount -R /mnt
 EOF
 )
