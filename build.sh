@@ -16,6 +16,7 @@ sed -i '/<\/devices>/i \
 virsh -c qemu:///system undefine arch-vm-base
 virsh -c qemu:///system define "$XML_FILE"
 
+echo "Building of VM Complete.Starting might take a while as it might take a bit of type for the vm to boot up and be ready for usage."
 ship --vm start arch-vm-base 
 
 ./setup.sh

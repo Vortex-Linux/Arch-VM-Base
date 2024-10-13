@@ -38,8 +38,8 @@ mount /dev/vda1 /mnt/boot &&
 mkdir /mnt/home &&
 mount /dev/vg0/home /mnt/home &&
 
-echo "Partitioning and filesystem setup complete. Sleeping for 20 seconds to allow changes to settle before continuing." &&
-sleep 20 && 
+echo "Partitioning and filesystem setup complete. Sleeping for 60 seconds to allow changes to settle before continuing." &&
+sleep 60 && 
 
 pacman -Sy pacman-contrib --noconfirm &&
 
@@ -63,7 +63,8 @@ echo "archlinux" > /etc/hostname &&
 
 sudo systemctl enable fstrim.timer && 
 
-sudo sed -i '/^\[multilib\]$/,/^\s*$/ s/^#*\s*Include\s*=.*/Include = \/etc\/pacman.d\/mirrorlist/; /^\s*Include\s*=/ s/^#*//' /etc/pacman.conf &&
+sed -i "/^\[multilib\]$/,/^\s*$/ s/^#*\s*Include\s*=.*/Include = \/etc\/pacman.d\/mirrorlist/" /etc/pacman.conf &&
+sed -i "/^\s*Include\s*=/ s/^#*/#/" /etc/pacman.conf &&
 
 echo "root:$arch" | sudo chpasswd && 
 
