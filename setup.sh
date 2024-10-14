@@ -13,8 +13,8 @@ while IFS= read -r command; do
     fi
 done <<< "$INITIAL_COMMANDS"
 
-INSTALLATION_SCRIPT=$(cat << EOF
-cat  << INSTALL_SCRIPT > "install.sh"
+INSTALLATION_SCRIPT=$(cat << 'EOF'
+cat  << 'INSTALL_SCRIPT' > "install.sh"
 #!/bin/bash
 sgdisk --new=1:2048:+1G --typecode=1:ef00 --change-name=1:"boot" /dev/vda 
 sgdisk --new=2:0:0 --typecode=2:8e00 --change-name=2:"LVM" /dev/vda 
@@ -55,8 +55,7 @@ pacstrap -K /mnt base linux linux-firmware base-devel
 
 genfstab -U -p /mnt >> /mnt/etc/fstab  
 
-cat  << CHROOT_SCRIPT > "/mnt/tmp/chroot.sh"
-#!/bin/bash
+arch-chroot /mnt /bin/bash << 'CHROOT' 
 
 sed -i 's/^#\(en_US.UTF-8 UTF-8\)/\1/' /etc/locale.gen
 locale-gen
@@ -108,13 +107,10 @@ Environment=DISPLAY=:0
 [Install]
 WantedBy=multi-user.target
 SERVICE
+
 sudo systemctl daemon-reload 
 sudo systemctl enable --now xorg.service
-CHROOT_SCRIPT 
-
-chmod +x /mnt/tmp/chroot.sh 
-
-arch-chroot /mnt /bin/bash "/mnt/tmp/chroot.sh" 
+CHROOT 
 
 umount -R /mnt
 INSTALL_SCRIPT
