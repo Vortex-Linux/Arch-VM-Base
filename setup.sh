@@ -117,7 +117,10 @@ INSTALL_SCRIPT
 EOF
 )
 
-tmux send-keys -t arch-vm-base "$INSTALLATION_SCRIPT" C-m
+tmux send-keys -t arch-vm-base "$INSTALLATION_SCRIPT" C-m 
+
+echo "Waiting 5 seconds for the installation script to be created..."
+sleep 5 &&
 
 EXECUTE_INSTALL_SCRIPT="bash install.sh"
 
