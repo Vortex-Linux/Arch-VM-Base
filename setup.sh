@@ -1,6 +1,6 @@
 #!/bin/bash
 
-COMMANDS=$(cat <<'EOF'
+INITIAL_COMMANDS=$(cat <<'EOF'
 root
 exec bash
 EOF
@@ -11,84 +11,88 @@ while IFS= read -r command; do
         tmux send-keys -t arch-vm-base "$command" C-m
         sleep 1
     fi
-done <<< "$COMMANDS"
+done <<< "$INITIAL_COMMANDS"
 
-COMMANDS=$(cat <<EOF
-sgdisk --new=1:2048:+1G --typecode=1:ef00 --change-name=1:"boot" /dev/vda;
-sgdisk --new=2:0:0 --typecode=2:8e00 --change-name=2:"LVM" /dev/vda;
+INSTALLATION_SCRIPT=$(cat << EOF
+cat  << INSTALL_SCRIPT > "install.sh"
+#!/bin/bash
+sgdisk --new=1:2048:+1G --typecode=1:ef00 --change-name=1:"boot" /dev/vda 
+sgdisk --new=2:0:0 --typecode=2:8e00 --change-name=2:"LVM" /dev/vda 
 
-partprobe /dev/vda;
+partprobe /dev/vda 
 
-pvcreate /dev/vda2;
-vgcreate vg0 /dev/vda2;
+pvcreate /dev/vda2 
+vgcreate vg0 /dev/vda2 
 
-lvcreate --type thin-pool -L 1999G -n thinpool vg0;
-lvcreate --thin vg0/thinpool --virtualsize 10G -n swap; 
-lvcreate --thin vg0/thinpool --virtualsize 1000G -n root;
-lvcreate --thin vg0/thinpool --virtualsize 989G -n home;
+lvcreate --type thin-pool -L 1999G -n thinpool vg0 
+lvcreate --thin vg0/thinpool --virtualsize 10G -n swap  
+lvcreate --thin vg0/thinpool --virtualsize 1000G -n root 
+lvcreate --thin vg0/thinpool --virtualsize 989G -n home 
 
-mkfs.fat -F32 /dev/vda1;
-mkfs.ext4 /dev/vg0/root;
-mkfs.ext4 /dev/vg0/home;
-mkswap /dev/vg0/swap;
-swapon /dev/vg0/swap;
+mkfs.fat -F32 /dev/vda1 
+mkfs.ext4 /dev/vg0/root 
+mkfs.ext4 /dev/vg0/home 
+mkswap /dev/vg0/swap 
+swapon /dev/vg0/swap 
 
-mount /dev/vg0/root /mnt; 
+mount /dev/vg0/root /mnt  
 
-mkdir /mnt/boot;
-mount /dev/vda1 /mnt/boot;
+mkdir /mnt/boot 
+mount /dev/vda1 /mnt/boot 
 
-mkdir /mnt/home;
-mount /dev/vg0/home /mnt/home;
+mkdir /mnt/home 
+mount /dev/vg0/home /mnt/home 
 
-echo "Partitioning and filesystem setup complete. Sleeping for 60 seconds to allow changes to settle before continuing.";
-sleep 60; 
+echo "Partitioning and filesystem setup complete. Sleeping for 60 seconds to allow changes to settle before continuing." 
+sleep 60  
 
-pacman -Sy pacman-contrib --noconfirm;
+pacman -Sy pacman-contrib --noconfirm 
 
-cp /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.backup;
-timeout 60 rankmirrors -n 6 /etc/pacman.d/mirrorlist.backup > /etc/pacman.d/mirrorlist;
+cp /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.backup 
+timeout 60 rankmirrors -n 6 /etc/pacman.d/mirrorlist.backup > /etc/pacman.d/mirrorlist 
 
-pacstrap -K /mnt base linux linux-firmware base-devel; 
+pacstrap -K /mnt base linux linux-firmware base-devel  
 
-genfstab -U -p /mnt >> /mnt/etc/fstab; 
+genfstab -U -p /mnt >> /mnt/etc/fstab  
 
-arch-chroot /mnt /bin/bash <<CHROOT
-sed -i 's/^#\(en_US.UTF-8 UTF-8\)/\1/' /etc/locale.gen;
-locale-gen;
+cat  << CHROOT_SCRIPT > "/mnt/tmp/chroot.sh"
+#!/bin/bash
 
-echo "LANG=en_US.UTF-8" > /etc/locale.conf; 
+sed -i 's/^#\(en_US.UTF-8 UTF-8\)/\1/' /etc/locale.gen
+locale-gen
 
-echo "archlinux" > /etc/hostname;  
+echo "LANG=en_US.UTF-8" > /etc/locale.conf
 
-sudo systemctl enable fstrim.timer; 
+echo "archlinux" > /etc/hostname  
 
-sudo sed -i '/^\[multilib\]$/,/^\s*$/ s|^#*\s*Include\s*=.*|Include = /etc/pacman.d/mirrorlist|; /^\s*Include\s*=/ s|^#*||' /etc/pacman.conf;
+sudo systemctl enable fstrim.timer
 
-echo "root:arch" | sudo chpasswd; 
+sudo sed -i '/^\[multilib\]$/,/^\s*$/ s|^#*\s*Include\s*=.*|Include = /etc/pacman.d/mirrorlist|; /^\s*Include\s*=/ s|^#*||' /etc/pacman.conf
 
-useradd -m -g users -G wheel,storage,power -s /bin/bash arch;
-echo "arch:arch" | sudo chpasswd; 
+echo "root:arch" | sudo chpasswd
 
-sudo sed -i '/^# %wheel/s/^# //' /etc/sudoers;
-echo "Defaults rootpw" >> /etc/sudoers;
+useradd -m -g users -G wheel,storage,power -s /bin/bash arch
+echo "arch:arch" | sudo chpasswd
 
-bootctl install; 
+sudo sed -i '/^# %wheel/s/^# //' /etc/sudoers
+echo "Defaults rootpw" >> /etc/sudoers
 
-sudo touch /boot/loader/entries/arch.conf;
+bootctl install
+
+sudo touch /boot/loader/entries/arch.conf
 sudo tee /boot/loader/entries/arch.conf << BOOTENTRY
 title   Arch Linux
 linux   /vmlinuz-linux
 initrd  /initramfs-linux.img
 options root=/dev/vg0/root rw
-BOOTENTRY;
+BOOTENTRY
 
-sudo pacman -S xorg-server xorg-xinit xpra networkmanager blueman linux-headers --noconfirm;
+sudo pacman -S xorg-server xorg-xinit xpra networkmanager blueman linux-headers --noconfirm
 
-sudo systemctl enable NetworkManager.service;
+sudo systemctl enable NetworkManager.service
 
-echo -e "X11Forwarding yes\nX11DisplayOffset 10" | sudo tee -a /etc/ssh/sshd_config; 
-sudo systemctl reload sshd; 
+echo -e "X11Forwarding yes\nX11DisplayOffset 10" | sudo tee -a /etc/ssh/sshd_config
+sudo systemctl reload sshd 
 
 sudo tee /etc/systemd/system/xorg.service > /dev/null <<SERVICE
 [Unit]
@@ -103,12 +107,22 @@ Environment=DISPLAY=:0
 
 [Install]
 WantedBy=multi-user.target
-SERVICE;
-sudo systemctl daemon-reload; 
+SERVICE
+sudo systemctl daemon-reload 
 sudo systemctl enable --now xorg.service
-CHROOT;
-umount -R /mnt;
+CHROOT_SCRIPT 
+
+chmod +x /mnt/tmp/chroot.sh 
+
+arch-chroot /mnt /bin/bash "/mnt/tmp/chroot.sh" 
+
+umount -R /mnt
+INSTALL_SCRIPT
 EOF
 )
 
-tmux send-keys -t arch-vm-base "$COMMANDS" C-m
+tmux send-keys -t arch-vm-base "$INSTALLATION_SCRIPT" C-m
+
+EXECUTE_INSTALL_SCRIPT="bash install.sh"
+
+tmux send-keys -t arch-vm-base "$EXECUTE_INSTALL_SCRIPT" C-m
