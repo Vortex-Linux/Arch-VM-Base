@@ -14,79 +14,81 @@ while IFS= read -r command; do
 done <<< "$COMMANDS"
 
 COMMANDS=$(cat <<EOF
-sgdisk --new=1:2048:+1G --typecode=1:ef00 --change-name=1:"boot" /dev/vda &&
-sgdisk --new=2:0:0 --typecode=2:8e00 --change-name=2:"LVM" /dev/vda && 
+sgdisk --new=1:2048:+1G --typecode=1:ef00 --change-name=1:"boot" /dev/vda;
+sgdisk --new=2:0:0 --typecode=2:8e00 --change-name=2:"LVM" /dev/vda;
 
-pvcreate /dev/vda2 &&
-vgcreate vg0 /dev/vda2 &&
+partprobe /dev/vda;
 
-lvcreate --type thin-pool -L 1999G -n thinpool vg0 &&
-lvcreate --thin vg0/thinpool --virtualsize 10G -n swap && 
-lvcreate --thin vg0/thinpool --virtualsize 1000G -n root &&
-lvcreate --thin vg0/thinpool --virtualsize 989G -n home &&
+pvcreate /dev/vda2;
+vgcreate vg0 /dev/vda2;
 
-mkfs.fat -F32 /dev/vda1 &&
-mkfs.ext4 /dev/vg0/root &&
-mkfs.ext4 /dev/vg0/home &&
-mkswap /dev/vg0/swap &&
-swapon /dev/vg0/swap &&
+lvcreate --type thin-pool -L 1999G -n thinpool vg0;
+lvcreate --thin vg0/thinpool --virtualsize 10G -n swap; 
+lvcreate --thin vg0/thinpool --virtualsize 1000G -n root;
+lvcreate --thin vg0/thinpool --virtualsize 989G -n home;
 
-mount /dev/vg0/root /mnt && 
+mkfs.fat -F32 /dev/vda1;
+mkfs.ext4 /dev/vg0/root;
+mkfs.ext4 /dev/vg0/home;
+mkswap /dev/vg0/swap;
+swapon /dev/vg0/swap;
 
-mkdir /mnt/boot &&
-mount /dev/vda1 /mnt/boot &&
+mount /dev/vg0/root /mnt; 
 
-mkdir /mnt/home &&
-mount /dev/vg0/home /mnt/home &&
+mkdir /mnt/boot;
+mount /dev/vda1 /mnt/boot;
 
-echo "Partitioning and filesystem setup complete. Sleeping for 60 seconds to allow changes to settle before continuing." &&
-sleep 60 && 
+mkdir /mnt/home;
+mount /dev/vg0/home /mnt/home;
 
-pacman -Sy pacman-contrib --noconfirm &&
+echo "Partitioning and filesystem setup complete. Sleeping for 60 seconds to allow changes to settle before continuing.";
+sleep 60; 
 
-cp /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.backup &&
-timeout 60 rankmirrors -n 6 /etc/pacman.d/mirrorlist.backup > /etc/pacman.d/mirrorlist &&
+pacman -Sy pacman-contrib --noconfirm;
 
-pacstrap -K /mnt base linux linux-firmware base-devel && 
+cp /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.backup;
+timeout 60 rankmirrors -n 6 /etc/pacman.d/mirrorlist.backup > /etc/pacman.d/mirrorlist;
 
-genfstab -U -p /mnt >> /mnt/etc/fstab && 
+pacstrap -K /mnt base linux linux-firmware base-devel; 
 
-arch-chroot /mnt /bin/bash -c "
-sed -i 's/^#\(en_US.UTF-8 UTF-8\)/\1/' /etc/locale.gen &&
-locale-gen &&
+genfstab -U -p /mnt >> /mnt/etc/fstab; 
 
-echo "LANG=en_US.UTF-8" > /etc/locale.conf && 
+arch-chroot /mnt /bin/bash <<CHROOT
+sed -i 's/^#\(en_US.UTF-8 UTF-8\)/\1/' /etc/locale.gen;
+locale-gen;
 
-echo "archlinux" > /etc/hostname &&  
+echo "LANG=en_US.UTF-8" > /etc/locale.conf; 
 
-sudo systemctl enable fstrim.timer && 
+echo "archlinux" > /etc/hostname;  
 
-sudo sed -i '/^\[multilib\]$/,/^\s*$/ s|^#*\s*Include\s*=.*|Include = /etc/pacman.d/mirrorlist|; /^\s*Include\s*=/ s|^#*||' /etc/pacman.conf &&
+sudo systemctl enable fstrim.timer; 
 
-echo "root:arch" | sudo chpasswd && 
+sudo sed -i '/^\[multilib\]$/,/^\s*$/ s|^#*\s*Include\s*=.*|Include = /etc/pacman.d/mirrorlist|; /^\s*Include\s*=/ s|^#*||' /etc/pacman.conf;
 
-useradd -m -g users -G wheel,storage,power -s /bin/bash arch &&
-echo "arch:arch" | sudo chpasswd && 
+echo "root:arch" | sudo chpasswd; 
 
-sudo sed -i '/^# %wheel/s/^# //' /etc/sudoers &&
-echo "Defaults rootpw" >> /etc/sudoers &&
+useradd -m -g users -G wheel,storage,power -s /bin/bash arch;
+echo "arch:arch" | sudo chpasswd; 
 
-bootctl install && 
+sudo sed -i '/^# %wheel/s/^# //' /etc/sudoers;
+echo "Defaults rootpw" >> /etc/sudoers;
 
-sudo touch /boot/loader/entries/arch.conf &&
+bootctl install; 
+
+sudo touch /boot/loader/entries/arch.conf;
 sudo tee /boot/loader/entries/arch.conf << BOOTENTRY
 title   Arch Linux
 linux   /vmlinuz-linux
 initrd  /initramfs-linux.img
 options root=/dev/vg0/root rw
-BOOTENTRY &&
+BOOTENTRY;
 
-sudo pacman -S xorg-server xorg-xinit xpra networkmanager blueman linux-headers --noconfirm &&
+sudo pacman -S xorg-server xorg-xinit xpra networkmanager blueman linux-headers --noconfirm;
 
-sudo systemctl enable NetworkManager.service &&
+sudo systemctl enable NetworkManager.service;
 
-echo -e "X11Forwarding yes\nX11DisplayOffset 10" | sudo tee -a /etc/ssh/sshd_config && 
-sudo systemctl reload sshd && 
+echo -e "X11Forwarding yes\nX11DisplayOffset 10" | sudo tee -a /etc/ssh/sshd_config; 
+sudo systemctl reload sshd; 
 
 sudo tee /etc/systemd/system/xorg.service > /dev/null <<SERVICE
 [Unit]
@@ -101,11 +103,11 @@ Environment=DISPLAY=:0
 
 [Install]
 WantedBy=multi-user.target
-SERVICE &&
-sudo systemctl daemon-reload && 
+SERVICE;
+sudo systemctl daemon-reload; 
 sudo systemctl enable --now xorg.service
-" &&
-umount -R /mnt
+CHROOT;
+umount -R /mnt;
 EOF
 )
 
