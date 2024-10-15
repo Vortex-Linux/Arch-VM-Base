@@ -16,7 +16,7 @@ done <<< "$INITIAL_COMMANDS"
 INSTALLATION_SCRIPT=$(cat << 'EOF'
 cat  << 'INSTALL_SCRIPT' > "install.sh"
 #!/bin/bash
-sgdisk --new=1:2048:+1G --typecode=1:ef00 --change-name=1:"boot" /dev/vda 
+sgdisk --new=1:2048:+1G --typecode=1:ef02 --change-name=1:"boot" /dev/vda 
 sgdisk --new=2:0:0 --typecode=2:8e00 --change-name=2:"LVM" /dev/vda 
 
 partprobe /dev/vda 
@@ -29,7 +29,6 @@ lvcreate --thin vg0/thinpool --virtualsize 10G -n swap
 lvcreate --thin vg0/thinpool --virtualsize 1000G -n root 
 lvcreate --thin vg0/thinpool --virtualsize 989G -n home 
 
-mkfs.fat -F32 /dev/vda1 
 mkfs.ext4 /dev/vg0/root 
 mkfs.ext4 /dev/vg0/home 
 mkswap /dev/vg0/swap 
@@ -76,17 +75,10 @@ echo "arch:arch" | sudo chpasswd
 sudo sed -i '/^# %wheel/s/^# //' /etc/sudoers
 echo "Defaults rootpw" >> /etc/sudoers
 
-bootctl install
+sudo pacman -S xorg-server xorg-xinit xpra networkmanager blueman linux-headers grub --noconfirm
 
-sudo touch /boot/loader/entries/arch.conf
-sudo tee /boot/loader/entries/arch.conf << BOOTENTRY
-title   Arch Linux
-linux   /vmlinuz-linux
-initrd  /initramfs-linux.img
-options root=/dev/vg0/root rw
-BOOTENTRY
-
-sudo pacman -S xorg-server xorg-xinit xpra networkmanager blueman linux-headers --noconfirm
+grub-install --target=i386-pc /dev/vda
+grub-mkconfig -o /boot/grub/grub.cfg
 
 sudo systemctl enable NetworkManager.service
 
@@ -108,8 +100,7 @@ Environment=DISPLAY=:0
 WantedBy=multi-user.target
 SERVICE
 
-sudo systemctl daemon-reload 
-sudo systemctl enable --now xorg.service
+sudo systemctl enable xorg.service
 CHROOT 
 
 umount -R /mnt
