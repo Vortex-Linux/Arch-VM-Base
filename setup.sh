@@ -76,12 +76,11 @@ echo "arch:arch" | chpasswd
 sed -i '/^# %wheel/s/^# //' /etc/sudoers
 echo "Defaults rootpw" >> /etc/sudoers
 
-pacman -S xorg-server xorg-xinit xpra networkmanager blueman linux-headers grub efibootmgr --noconfirm
+pacman -S xorg-server xorg-xinit xpra networkmanager blueman linux-headers grub efibootmgr lvm2 --noconfirm
 
-sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=""/GRUB_CMDLINE_LINUX_DEFAULT="net.ifnames=0 biosdevname=0"/' /etc/default/grub
-sed -i 's/HOOKS=(base udev autodetect modconf block filesystems keyboard fsck)/HOOKS=(base udev autodetect modconf block lvm2 filesystems keyboard fsck)/' /etc/mkinitcpio.conf
-sed -i 's/MODULES=()/MODULES=(lvm2)/' /etc/mkinitcpio.conf
-sed -i 's/MODULES=()/MODULES=(ext4)/' /etc/mkinitcpio.conf
+sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet net.ifnames=0 biosdevname=0"/' /etc/default/grub
+sed -i 's/^HOOKS=.*/HOOKS=(base udev autodetect modconf block lvm2 filesystems keyboard fsck)/' /etc/mkinitcpio.conf
+sed -i 's/^MODULES=.*/MODULES=(ext4)/' /etc/mkinitcpio.conf
 mkinitcpio -P
 
 grub-install --target=i386-pc /dev/vda
@@ -108,9 +107,9 @@ WantedBy=multi-user.target
 SERVICE
 
 systemctl enable xorg.service
+
 CHROOT
 
-umount -R /mnt
 INSTALL_SCRIPT
 EOF
 )
