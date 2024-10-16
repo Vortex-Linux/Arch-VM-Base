@@ -1,22 +1,5 @@
 #!/bin/bash
-
-INITIAL_COMMANDS=$(cat <<'EOF'
-root
-exec bash
-EOF
-)
-
-while IFS= read -r command; do
-    if [[ -n "$command" ]]; then
-        tmux send-keys -t arch-vm-base "$command" C-m
-        sleep 1
-    fi
-done <<< "$INITIAL_COMMANDS"
-
-INSTALLATION_SCRIPT=$(cat << 'EOF'
-cat  << 'INSTALL_SCRIPT' > "install.sh"
-#!/bin/bash
-sgdisk --new=1:2048:+1G --typecode=1:ef00 --change-name=1:"boot" /dev/vda 
+sgdisk --new=1:2048:+1G --typecode=1:ef02 --change-name=1:"boot" /dev/vda 
 sgdisk --new=2:0:0 --typecode=2:8e00 --change-name=2:"LVM" /dev/vda 
 
 partprobe /dev/vda 
@@ -82,10 +65,10 @@ sed -i 's/^HOOKS=.*/HOOKS=(base udev autodetect modconf block lvm2 filesystems k
 sed -i 's/^MODULES=.*/MODULES=(ext4)/' /etc/mkinitcpio.conf
 mkinitcpio -P
 
-bootctl install --esp-path=/boot
+bootctl install
 
 sudo touch /boot/loader/entries/arch.conf
-sudo tee /boot/loader/entries/arch.conf <<BOOTENTRY
+sudo tee /boot/loader/entries/arch.conf << BOOTENTRY
 title   Arch Linux
 linux   /vmlinuz-linux
 initrd  /initramfs-linux.img
@@ -116,17 +99,3 @@ systemctl enable xorg.service
 
 CHROOT
 
-umount -R /mnt
-
-INSTALL_SCRIPT
-EOF
-)
-
-tmux send-keys -t arch-vm-base "$INSTALLATION_SCRIPT" C-m 
-
-echo "Waiting 5 seconds for the installation script to be created..."
-sleep 5 &&
-
-EXECUTE_INSTALL_SCRIPT="bash install.sh"
-
-tmux send-keys -t arch-vm-base "$EXECUTE_INSTALL_SCRIPT" C-m
