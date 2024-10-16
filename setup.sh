@@ -86,11 +86,13 @@ bootctl install --esp-path=/boot
 
 sudo touch /boot/loader/entries/arch.conf
 sudo tee /boot/loader/entries/arch.conf <<BOOTENTRY
-title   Arch Linux
-linux   /vmlinuz-linux
-initrd  /initramfs-linux.img
-options root=/dev/vg0/root rw
-BOOTENTRY 
+title Arch Linux
+linux /vmlinuz-linux
+initrd /initramfs-linux.img
+BOOTENTRY
+echo "options root=PARTUUID=$(blkid -s PARTUUID -o value "/dev/vg0/root") rw" >> /boot/loader/entries/arch.conf
+echo "options root=PARTUUID=$(blkid -s UUID -o value /dev/vg0/root) rw" >> /boot/loader/entries/arch.conf
+
 
 systemctl enable NetworkManager.service
 
