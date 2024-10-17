@@ -16,7 +16,7 @@ done <<< "$INITIAL_COMMANDS"
 INSTALLATION_SCRIPT=$(cat << 'EOF'
 cat  << 'INSTALL_SCRIPT' > "install.sh"
 #!/bin/bash
-sgdisk --new=1:2048:+1G --typecode=1:ef00 --change-name=1:"boot" /dev/vda 
+sgdisk --new=1:2048:+1G --typecode=1:8300 --change-name=1:"boot" /dev/vda 
 sgdisk --new=2:0:0 --typecode=2:8e00 --change-name=2:"LVM" /dev/vda 
 
 partprobe /dev/vda 
@@ -29,7 +29,7 @@ lvcreate --thin vg0/thinpool --virtualsize 10G -n swap
 lvcreate --thin vg0/thinpool --virtualsize 1000G -n root 
 lvcreate --thin vg0/thinpool --virtualsize 989G -n home 
 
-mkfs.fat -F32 /dev/vda1
+mkfs.ext4 /dev/vda1
 mkfs.ext4 /dev/vg0/root 
 mkfs.ext4 /dev/vg0/home 
 mkswap /dev/vg0/swap 
@@ -76,23 +76,13 @@ echo "arch:arch" | chpasswd
 sed -i '/^# %wheel/s/^# //' /etc/sudoers
 echo "Defaults rootpw" >> /etc/sudoers
 
-pacman -S xorg-server xorg-xinit xpra networkmanager blueman linux-headers lvm2 --noconfirm
+pacman -S xorg-server xorg-xinit xpra networkmanager blueman linux-headers lvm2 grub --noconfirm
 
 sed -i 's/^HOOKS=.*/HOOKS=(base udev autodetect modconf block lvm2 filesystems keyboard fsck)/' /etc/mkinitcpio.conf
-sed -i 's/^MODULES=.*/MODULES=(ext4)/' /etc/mkinitcpio.conf
-mkinitcpio -P
+mkinitcpio -P linux
 
-bootctl install --esp-path=/boot
-
-sudo touch /boot/loader/entries/arch.conf
-sudo tee /boot/loader/entries/arch.conf <<BOOTENTRY
-title Arch Linux
-linux /vmlinuz-linux
-initrd /initramfs-linux.img
-BOOTENTRY
-echo "options root=PARTUUID=$(blkid -s PARTUUID -o value "/dev/vg0/root") rw" >> /boot/loader/entries/arch.conf
-echo "options root=PARTUUID=$(blkid -s UUID -o value /dev/vg0/root) rw" >> /boot/loader/entries/arch.conf
-
+grub-install --target=i386-pc /dev/vda
+grub-mkconfig -o /boot/grub/grub.cfg
 
 systemctl enable NetworkManager.service
 
@@ -118,8 +108,6 @@ systemctl enable xorg.service
 
 CHROOT
 
-umount -R /mnt
-
 INSTALL_SCRIPT
 EOF
 )
@@ -132,3 +120,4 @@ sleep 5 &&
 EXECUTE_INSTALL_SCRIPT="bash install.sh"
 
 tmux send-keys -t arch-vm-base "$EXECUTE_INSTALL_SCRIPT" C-m
+
