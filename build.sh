@@ -21,3 +21,4 @@ ship --vm start arch-vm-base
 
 ./setup.sh
 ./view_vm.sh
+./release.sh
