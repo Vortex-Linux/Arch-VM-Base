@@ -6,4 +6,4 @@ DISK_IMAGE=$(sudo virsh domblklist arch-vm-base | grep .qcow2 | awk '{print $2}'
 
 xz -z "$DISK_IMAGE"
 
-mv "$DISK_IMAGE.xz" output/archlinux.xz
+mv "$DISK_IMAGE.xz" output/archlinux.qcow2.xz
