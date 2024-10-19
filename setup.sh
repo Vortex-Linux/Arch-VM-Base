@@ -47,12 +47,13 @@ mount /dev/vg0/home /mnt/home
 echo "Partitioning and filesystem setup complete. Sleeping for 60 seconds to allow changes to settle before continuing." 
 sleep 60  
 
-pacman -Sy pacman-contrib --noconfirm 
+pacman -Sy reflector --noconfirm  
 
-cp /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.backup 
-timeout 60 rankmirrors -n 6 /etc/pacman.d/mirrorlist.backup > /etc/pacman.d/mirrorlist 
+reflector --latest 10 --download-timeout 60 --sort rate --save /etc/pacman.d/mirrorlist
 
-pacstrap -K /mnt base linux linux-firmware base-devel  
+pacstrap -K /mnt base linux linux-firmware base-devel 
+
+cp /etc/pacman.d/mirrorlist /mnt/etc/pacman.d/mirrorlist
 
 genfstab -U -p /mnt >> /mnt/etc/fstab  
 
