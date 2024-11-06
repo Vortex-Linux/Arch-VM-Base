@@ -8,15 +8,15 @@ echo "Compressing the Arch VM disk image..."
 
 ship --vm compress arch-vm-base 
 
-echo "Starting the xz compression of the Arch disk image to generate the release package for 'arch-vm-base'..."
+echo "Copying the Arch VM disk image to generate the release package for 'arch-vm-base'..."
 
 DISK_IMAGE=$(sudo virsh domblklist arch-vm-base | grep .qcow2 | awk '{print $2}')
 
-xz -9 -z "$DISK_IMAGE"
+cp "$DISK_IMAGE" output/archlinux.qcow2
 
-echo "Moving the compressed disk image to the output directory..."
+echo "Splitting the copied disk image into two parts..."
 
-mv "$DISK_IMAGE.xz" output/archlinux.qcow2.xz
+split -b $(( $(stat -c%s "output/archlinux.qcow2") / 2 )) -d -a 3 "output/archlinux.qcow2" "output/archlinux.qcow2."
 
-echo "The release package for 'arch-vm-base' has been generated successfully!"
+echo "The release package for 'arch-vm-base' has been generated and split successfully!"
 
